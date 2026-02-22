@@ -1,0 +1,27 @@
+﻿SET NUMERIC_ROUNDABORT OFF
+GO
+SET ANSI_PADDING, ANSI_WARNINGS, CONCAT_NULL_YIELDS_NULL, ARITHABORT, QUOTED_IDENTIFIER, ANSI_NULLS ON
+GO
+PRINT N'Altering [Operation].[Products]'
+GO
+ALTER TABLE [Operation].[Products] ADD
+[Colour4] [nvarchar] (50) NULL
+GO
+PRINT N'Refreshing [Sales].[Order Details Extended]'
+GO
+EXEC sp_refreshview N'[Sales].[Order Details Extended]'
+GO
+PRINT N'Refreshing [Sales].[Sales by Category]'
+GO
+EXEC sp_refreshview N'[Sales].[Sales by Category]'
+GO
+
+SET NUMERIC_ROUNDABORT OFF
+GO
+SET ANSI_PADDING, ANSI_WARNINGS, CONCAT_NULL_YIELDS_NULL, ARITHABORT, QUOTED_IDENTIFIER, ANSI_NULLS, NOCOUNT ON
+GO
+SET DATEFORMAT YMD
+GO
+SET XACT_ABORT ON
+GO
+

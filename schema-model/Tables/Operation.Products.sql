@@ -12,7 +12,11 @@ CREATE TABLE [Operation].[Products]
 [Discontinued] [bit] NOT NULL CONSTRAINT [DF_Products_Discontinued] DEFAULT ((0)),
 [Colour] [nvarchar] (50) NULL,
 [Colour2] [nvarchar] (50) NULL,
-[Colour3] [nvarchar] (50) NULL
+[Colour3] [nvarchar] (50) NULL,
+[Colour4] [nvarchar] (50) NULL,
+[Colour5] [nvarchar] (50) NULL,
+[Colour6] [nvarchar] (50) NULL,
+[Colour7] [nvarchar] (50) NULL
 )
 GO
 ALTER TABLE [Operation].[Products] ADD CONSTRAINT [CK_Products_UnitPrice] CHECK (([UnitPrice]>=(0)))

@@ -1,0 +1,234 @@
+{
+  "individualResults" : [ {
+    "timestamp" : "2026-02-21T11:37:27.0451837",
+    "operation" : "changes",
+    "exception" : null,
+    "licenseFailed" : false,
+    "onlyInSource" : [ ],
+    "onlyInTarget" : [ {
+      "objectType" : "Table",
+      "name" : "EmployeeTerritories",
+      "schema" : "Logistics",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Logistics].[EmployeeTerritories]\r\n(\r\n[EmployeeID] [int] NOT NULL,\r\n[TerritoryID] [nvarchar] (20) NOT NULL\r\n)\r\nGO\r\nALTER TABLE [Logistics].[EmployeeTerritories] ADD CONSTRAINT [PK_EmployeeTerritories] PRIMARY KEY NONCLUSTERED ([EmployeeID], [TerritoryID])\r\nGO\r\nALTER TABLE [Logistics].[EmployeeTerritories] ADD CONSTRAINT [FK_EmployeeTerritories_Employees] FOREIGN KEY ([EmployeeID]) REFERENCES [Operation].[Employees] ([EmployeeID])\r\nGO\r\nALTER TABLE [Logistics].[EmployeeTerritories] ADD CONSTRAINT [FK_EmployeeTerritories_Territories] FOREIGN KEY ([TerritoryID]) REFERENCES [Sales].[Territories] ([TerritoryID])\r\nGO\r\nALTER TABLE [Logistics].[EmployeeTerritories] NOCHECK CONSTRAINT [FK_EmployeeTerritories_Employees]\r\nGO\r\nALTER TABLE [Logistics].[EmployeeTerritories] NOCHECK CONSTRAINT [FK_EmployeeTerritories_Territories]\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "FlightRoute",
+      "schema" : "Logistics",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Logistics].[FlightRoute]\r\n(\r\n[RouteID] [int] NOT NULL IDENTITY(1, 1),\r\n[DepartureCity] [nvarchar] (50) NOT NULL,\r\n[ArrivalCity] [nvarchar] (50) NOT NULL,\r\n[Distance] [int] NOT NULL\r\n)\r\nGO\r\nALTER TABLE [Logistics].[FlightRoute] ADD CONSTRAINT [PK__FlightRo__80979AADC83FDFDB] PRIMARY KEY CLUSTERED ([RouteID])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Flight",
+      "schema" : "Logistics",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Logistics].[Flight]\r\n(\r\n[FlightID] [int] NOT NULL IDENTITY(1, 1),\r\n[Airline] [nvarchar] (50) NOT NULL,\r\n[DepartureCity] [nvarchar] (50) NOT NULL,\r\n[ArrivalCity] [nvarchar] (50) NOT NULL,\r\n[DepartureTime] [datetime] NOT NULL,\r\n[ArrivalTime] [datetime] NOT NULL,\r\n[Price] [decimal] (10, 2) NOT NULL,\r\n[AvailableSeats] [int] NOT NULL\r\n)\r\nGO\r\nALTER TABLE [Logistics].[Flight] ADD CONSTRAINT [PK__Flight__8A9E148E9A8ED149] PRIMARY KEY CLUSTERED ([FlightID])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "MaintenanceLog",
+      "schema" : "Logistics",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Logistics].[MaintenanceLog]\r\n(\r\n[LogID] [int] NOT NULL IDENTITY(1, 1),\r\n[FlightID] [int] NULL,\r\n[MaintenanceDate] [datetime] NULL CONSTRAINT [DF__Maintenan__Maint__31EC6D26] DEFAULT (getdate()),\r\n[Description] [nvarchar] (500) NULL,\r\n[MaintenanceStatus] [nvarchar] (20) NULL CONSTRAINT [DF__Maintenan__Maint__32E0915F] DEFAULT ('Pending')\r\n)\r\nGO\r\nALTER TABLE [Logistics].[MaintenanceLog] ADD CONSTRAINT [PK__Maintena__5E5499A8A7E7CD24] PRIMARY KEY CLUSTERED ([LogID])\r\nGO\r\nALTER TABLE [Logistics].[MaintenanceLog] ADD CONSTRAINT [FK__Maintenan__Fligh__30F848ED] FOREIGN KEY ([FlightID]) REFERENCES [Logistics].[Flight] ([FlightID])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Region",
+      "schema" : "Logistics",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Logistics].[Region]\r\n(\r\n[RegionID] [int] NOT NULL,\r\n[RegionDescription] [nchar] (50) NOT NULL,\r\n[RegionName] [nvarchar] (20) NULL\r\n)\r\nGO\r\nALTER TABLE [Logistics].[Region] ADD CONSTRAINT [PK_Region] PRIMARY KEY NONCLUSTERED ([RegionID])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Shippers",
+      "schema" : "Logistics",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Logistics].[Shippers]\r\n(\r\n[ShipperID] [int] NOT NULL IDENTITY(1, 1),\r\n[CompanyName] [nvarchar] (40) NOT NULL,\r\n[Phone] [nvarchar] (24) NULL,\r\n[id] [int] NULL,\r\n[ShipId] [int] NULL\r\n)\r\nGO\r\nALTER TABLE [Logistics].[Shippers] ADD CONSTRAINT [PK_Shippers] PRIMARY KEY CLUSTERED ([ShipperID])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Suppliers",
+      "schema" : "Logistics",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Logistics].[Suppliers]\r\n(\r\n[SupplierID] [int] NOT NULL IDENTITY(1, 1),\r\n[CompanyName] [nvarchar] (40) NOT NULL,\r\n[ContactName] [nvarchar] (30) NULL,\r\n[ContactTitle] [nvarchar] (30) NULL,\r\n[Address] [nvarchar] (60) NULL,\r\n[City] [nvarchar] (15) NULL,\r\n[Region] [nvarchar] (15) NULL,\r\n[PostalCode] [nvarchar] (10) NULL,\r\n[Country] [nvarchar] (15) NULL,\r\n[Phone] [nvarchar] (24) NULL,\r\n[Fax] [nvarchar] (24) NULL,\r\n[HomePage] [ntext] NULL\r\n)\r\nGO\r\nALTER TABLE [Logistics].[Suppliers] ADD CONSTRAINT [PK_Suppliers] PRIMARY KEY CLUSTERED ([SupplierID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [CompanyName] ON [Logistics].[Suppliers] ([CompanyName])\r\nGO\r\nCREATE NONCLUSTERED INDEX [PostalCode] ON [Logistics].[Suppliers] ([PostalCode])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Categories",
+      "schema" : "Operation",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Operation].[Categories]\r\n(\r\n[CategoryID] [int] NOT NULL IDENTITY(1, 1),\r\n[CategoryName] [nvarchar] (15) NOT NULL,\r\n[Description] [ntext] NULL,\r\n[Picture] [image] NULL,\r\n[date] [date] NULL\r\n)\r\nGO\r\nALTER TABLE [Operation].[Categories] ADD CONSTRAINT [PK_Categories] PRIMARY KEY CLUSTERED ([CategoryID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [CategoryName] ON [Operation].[Categories] ([CategoryName])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Employees",
+      "schema" : "Operation",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Operation].[Employees]\r\n(\r\n[EmployeeID] [int] NOT NULL IDENTITY(1, 1),\r\n[LastName] [nvarchar] (20) NOT NULL,\r\n[FirstName] [nvarchar] (10) NOT NULL,\r\n[Title] [nvarchar] (30) NULL,\r\n[TitleOfCourtesy] [nvarchar] (25) NULL,\r\n[BirthDate] [datetime] NULL,\r\n[HireDate] [datetime] NULL,\r\n[Address] [nvarchar] (60) NULL,\r\n[City] [nvarchar] (15) NULL,\r\n[Region] [nvarchar] (15) NULL,\r\n[PostalCode] [nvarchar] (10) NULL,\r\n[Country] [nvarchar] (15) NULL,\r\n[HomePhone] [nvarchar] (24) NULL,\r\n[Extension] [nvarchar] (4) NULL,\r\n[Photo] [image] NULL,\r\n[Notes] [ntext] NULL,\r\n[ReportsTo] [int] NULL,\r\n[PhotoPath] [nvarchar] (255) NULL\r\n)\r\nGO\r\nALTER TABLE [Operation].[Employees] ADD CONSTRAINT [CK_Birthdate] CHECK (([BirthDate]<getdate()))\r\nGO\r\nALTER TABLE [Operation].[Employees] ADD CONSTRAINT [PK_Employees] PRIMARY KEY CLUSTERED ([EmployeeID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [LastName] ON [Operation].[Employees] ([LastName])\r\nGO\r\nCREATE NONCLUSTERED INDEX [PostalCode] ON [Operation].[Employees] ([PostalCode])\r\nGO\r\nALTER TABLE [Operation].[Employees] ADD CONSTRAINT [FK_Employees_Employees] FOREIGN KEY ([ReportsTo]) REFERENCES [Operation].[Employees] ([EmployeeID])\r\nGO\r\nALTER TABLE [Operation].[Employees] NOCHECK CONSTRAINT [FK_Employees_Employees]\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Products",
+      "schema" : "Operation",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Operation].[Products]\r\n(\r\n[ProductID] [int] NOT NULL IDENTITY(1, 1),\r\n[ProductName] [nvarchar] (40) NOT NULL,\r\n[SupplierID] [int] NULL,\r\n[CategoryID] [int] NULL,\r\n[QuantityPerUnit] [nvarchar] (20) NULL,\r\n[UnitPrice] [money] NULL CONSTRAINT [DF_Products_UnitPrice] DEFAULT ((0)),\r\n[UnitsInStock] [smallint] NULL CONSTRAINT [DF_Products_UnitsInStock] DEFAULT ((0)),\r\n[UnitsOnOrder] [smallint] NULL CONSTRAINT [DF_Products_UnitsOnOrder] DEFAULT ((0)),\r\n[ReorderLevel] [smallint] NULL CONSTRAINT [DF_Products_ReorderLevel] DEFAULT ((0)),\r\n[Discontinued] [bit] NOT NULL CONSTRAINT [DF_Products_Discontinued] DEFAULT ((0)),\r\n[Colour] [nvarchar] (50) NULL,\r\n[Colour2] [nvarchar] (50) NULL,\r\n[Colour3] [nvarchar] (50) NULL,\r\n[Colour4] [nvarchar] (50) NULL,\r\n[Colour6] [nvarchar] (50) NULL,\r\n[Colour7] [nvarchar] (50) NULL,\r\n[Colour5] [nvarchar] (50) NULL\r\n)\r\nGO\r\nALTER TABLE [Operation].[Products] ADD CONSTRAINT [CK_Products_UnitPrice] CHECK (([UnitPrice]>=(0)))\r\nGO\r\nALTER TABLE [Operation].[Products] ADD CONSTRAINT [CK_ReorderLevel] CHECK (([ReorderLevel]>=(0)))\r\nGO\r\nALTER TABLE [Operation].[Products] ADD CONSTRAINT [CK_UnitsInStock] CHECK (([UnitsInStock]>=(0)))\r\nGO\r\nALTER TABLE [Operation].[Products] ADD CONSTRAINT [CK_UnitsOnOrder] CHECK (([UnitsOnOrder]>=(0)))\r\nGO\r\nALTER TABLE [Operation].[Products] ADD CONSTRAINT [PK_Products] PRIMARY KEY CLUSTERED ([ProductID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [CategoriesProducts] ON [Operation].[Products] ([CategoryID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [CategoryID] ON [Operation].[Products] ([CategoryID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [ProductName] ON [Operation].[Products] ([ProductName])\r\nGO\r\nCREATE NONCLUSTERED INDEX [SupplierID] ON [Operation].[Products] ([SupplierID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [SuppliersProducts] ON [Operation].[Products] ([SupplierID])\r\nGO\r\nALTER TABLE [Operation].[Products] ADD CONSTRAINT [FK_Products_Categories] FOREIGN KEY ([CategoryID]) REFERENCES [Operation].[Categories] ([CategoryID])\r\nGO\r\nALTER TABLE [Operation].[Products] ADD CONSTRAINT [FK_Products_Suppliers] FOREIGN KEY ([SupplierID]) REFERENCES [Logistics].[Suppliers] ([SupplierID])\r\nGO\r\nALTER TABLE [Operation].[Products] NOCHECK CONSTRAINT [FK_Products_Categories]\r\nGO\r\nALTER TABLE [Operation].[Products] NOCHECK CONSTRAINT [FK_Products_Suppliers]\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "CustomerDemographics",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Sales].[CustomerDemographics]\r\n(\r\n[CustomerTypeID] [nchar] (10) NOT NULL,\r\n[CustomerDesc] [ntext] NULL\r\n)\r\nGO\r\nALTER TABLE [Sales].[CustomerDemographics] ADD CONSTRAINT [PK_CustomerDemographics] PRIMARY KEY NONCLUSTERED ([CustomerTypeID])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "CustomersFeedback",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Sales].[CustomersFeedback]\r\n(\r\n[FeedbackID] [int] NOT NULL IDENTITY(1, 1),\r\n[CustomerID] [nchar] (5) NULL,\r\n[FeedbackDate] [datetime] NULL CONSTRAINT [DF__Customers__Feedb__29572725] DEFAULT (getdate()),\r\n[Rating] [int] NULL,\r\n[Comments] [nvarchar] (500) NULL\r\n)\r\nGO\r\nALTER TABLE [Sales].[CustomersFeedback] ADD CONSTRAINT [CK__Customers__Ratin__2A4B4B5E] CHECK (([Rating]>=(1) AND [Rating]<=(5)))\r\nGO\r\nALTER TABLE [Sales].[CustomersFeedback] ADD CONSTRAINT [PK__Customer__6A4BEDF61A949274] PRIMARY KEY CLUSTERED ([FeedbackID])\r\nGO\r\nALTER TABLE [Sales].[CustomersFeedback] ADD CONSTRAINT [FK__Customers__Custo__286302EC] FOREIGN KEY ([CustomerID]) REFERENCES [Sales].[Customers] ([CustomerID])\r\nGO\r\nALTER TABLE [Sales].[CustomersFeedback] NOCHECK CONSTRAINT [FK__Customers__Custo__286302EC]\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Customers",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Sales].[Customers]\r\n(\r\n[CustomerID] [nchar] (5) NOT NULL,\r\n[CompanyName] [nvarchar] (40) NOT NULL,\r\n[ContactName] [nvarchar] (30) NULL,\r\n[ContactTitle] [nvarchar] (30) NULL,\r\n[Address] [nvarchar] (60) NULL,\r\n[City] [nvarchar] (15) NULL,\r\n[Region] [nvarchar] (15) NULL,\r\n[PostalCode] [nvarchar] (10) NULL,\r\n[Country] [nvarchar] (15) NULL,\r\n[Phone] [nvarchar] (24) NULL,\r\n[Fax] [nvarchar] (24) NULL\r\n)\r\nGO\r\nALTER TABLE [Sales].[Customers] ADD CONSTRAINT [PK_Customers] PRIMARY KEY CLUSTERED ([CustomerID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [City] ON [Sales].[Customers] ([City])\r\nGO\r\nCREATE NONCLUSTERED INDEX [CompanyName] ON [Sales].[Customers] ([CompanyName])\r\nGO\r\nCREATE NONCLUSTERED INDEX [PostalCode] ON [Sales].[Customers] ([PostalCode])\r\nGO\r\nCREATE NONCLUSTERED INDEX [Region] ON [Sales].[Customers] ([Region])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "DiscountCode",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Sales].[DiscountCode]\r\n(\r\n[DiscountID] [int] NOT NULL IDENTITY(1, 1),\r\n[Code] [nvarchar] (20) NOT NULL,\r\n[DiscountPercentage] [decimal] (4, 2) NULL,\r\n[ExpiryDate] [datetime] NULL\r\n)\r\nGO\r\nALTER TABLE [Sales].[DiscountCode] ADD CONSTRAINT [CK__DiscountC__Disco__36B12243] CHECK (([DiscountPercentage]>=(0) AND [DiscountPercentage]<=(100)))\r\nGO\r\nALTER TABLE [Sales].[DiscountCode] ADD CONSTRAINT [PK__Discount__E43F6DF6CA2BF14E] PRIMARY KEY CLUSTERED ([DiscountID])\r\nGO\r\nALTER TABLE [Sales].[DiscountCode] ADD CONSTRAINT [UQ__Discount__A25C5AA70A86FB88] UNIQUE NONCLUSTERED ([Code])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "LoyaltyProgram",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Sales].[LoyaltyProgram]\r\n(\r\n[ProgramID] [int] NOT NULL IDENTITY(1, 1),\r\n[ProgramName] [nvarchar] (50) NOT NULL,\r\n[PointsMultiplier] [decimal] (3, 2) NULL CONSTRAINT [DF__LoyaltyPr__Point__239E4DCF] DEFAULT ((1.0))\r\n)\r\nGO\r\nALTER TABLE [Sales].[LoyaltyProgram] ADD CONSTRAINT [PK__LoyaltyP__7525603848DEBC46] PRIMARY KEY CLUSTERED ([ProgramID])\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Order Details",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Sales].[Order Details]\r\n(\r\n[OrderID] [int] NOT NULL,\r\n[ProductID] [int] NOT NULL,\r\n[UnitPrice] [money] NOT NULL CONSTRAINT [DF_Order_Details_UnitPrice] DEFAULT ((0)),\r\n[Quantity] [smallint] NOT NULL CONSTRAINT [DF_Order_Details_Quantity] DEFAULT ((1)),\r\n[Discount] [real] NOT NULL CONSTRAINT [DF_Order_Details_Discount] DEFAULT ((0))\r\n)\r\nGO\r\nALTER TABLE [Sales].[Order Details] ADD CONSTRAINT [CK_Discount] CHECK (([Discount]>=(0) AND [Discount]<=(1)))\r\nGO\r\nALTER TABLE [Sales].[Order Details] ADD CONSTRAINT [CK_Quantity] CHECK (([Quantity]>(0)))\r\nGO\r\nALTER TABLE [Sales].[Order Details] ADD CONSTRAINT [CK_UnitPrice] CHECK (([UnitPrice]>=(0)))\r\nGO\r\nALTER TABLE [Sales].[Order Details] ADD CONSTRAINT [PK_Order_Details] PRIMARY KEY CLUSTERED ([OrderID], [ProductID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [OrderID] ON [Sales].[Order Details] ([OrderID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [OrdersOrder_Details] ON [Sales].[Order Details] ([OrderID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [ProductID] ON [Sales].[Order Details] ([ProductID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [ProductsOrder_Details] ON [Sales].[Order Details] ([ProductID])\r\nGO\r\nALTER TABLE [Sales].[Order Details] ADD CONSTRAINT [FK_Order_Details_Orders] FOREIGN KEY ([OrderID]) REFERENCES [Sales].[Orders] ([OrderID])\r\nGO\r\nALTER TABLE [Sales].[Order Details] ADD CONSTRAINT [FK_Order_Details_Products] FOREIGN KEY ([ProductID]) REFERENCES [Operation].[Products] ([ProductID])\r\nGO\r\nALTER TABLE [Sales].[Order Details] NOCHECK CONSTRAINT [FK_Order_Details_Orders]\r\nGO\r\nALTER TABLE [Sales].[Order Details] NOCHECK CONSTRAINT [FK_Order_Details_Products]\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "OrderAuditLog",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Sales].[OrderAuditLog]\r\n(\r\n[AuditID] [int] NOT NULL IDENTITY(1, 1),\r\n[OrderID] [int] NULL,\r\n[ChangeDate] [datetime] NULL CONSTRAINT [DF__OrderAudi__Chang__4222D4EF] DEFAULT (getdate()),\r\n[ChangeDescription] [nvarchar] (500) NULL\r\n)\r\nGO\r\nALTER TABLE [Sales].[OrderAuditLog] ADD CONSTRAINT [PK__OrderAud__A17F23B8298306B2] PRIMARY KEY CLUSTERED ([AuditID])\r\nGO\r\nALTER TABLE [Sales].[OrderAuditLog] ADD CONSTRAINT [FK__OrderAudi__Order__4316F928] FOREIGN KEY ([OrderID]) REFERENCES [Sales].[Orders] ([OrderID])\r\nGO\r\nALTER TABLE [Sales].[OrderAuditLog] NOCHECK CONSTRAINT [FK__OrderAudi__Order__4316F928]\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Orders",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Sales].[Orders]\r\n(\r\n[OrderID] [int] NOT NULL IDENTITY(1, 1),\r\n[CustomerID] [nchar] (5) NULL,\r\n[EmployeeID] [int] NULL,\r\n[OrderDate] [datetime] NULL,\r\n[RequiredDate] [datetime] NULL,\r\n[ShippedDate] [datetime] NULL,\r\n[ShipVia] [int] NULL,\r\n[Freight] [money] NULL CONSTRAINT [DF_Orders_Freight] DEFAULT ((0)),\r\n[ShipName] [nvarchar] (40) NULL,\r\n[ShipAddress] [nvarchar] (60) NULL,\r\n[ShipCity] [nvarchar] (15) NULL,\r\n[ShipRegion] [nvarchar] (15) NULL,\r\n[ShipPostalCode] [nvarchar] (10) NULL,\r\n[ShipCountry] [nvarchar] (15) NULL,\r\n[ShipCountryCode] [int] NULL\r\n)\r\nGO\r\nALTER TABLE [Sales].[Orders] ADD CONSTRAINT [PK_Orders] PRIMARY KEY CLUSTERED ([OrderID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [CustomerID] ON [Sales].[Orders] ([CustomerID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [CustomersOrders] ON [Sales].[Orders] ([CustomerID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [EmployeeID] ON [Sales].[Orders] ([EmployeeID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [EmployeesOrders] ON [Sales].[Orders] ([EmployeeID])\r\nGO\r\nCREATE NONCLUSTERED INDEX [OrderDate] ON [Sales].[Orders] ([OrderDate])\r\nGO\r\nCREATE NONCLUSTERED INDEX [ShippedDate] ON [Sales].[Orders] ([ShippedDate])\r\nGO\r\nCREATE NONCLUSTERED INDEX [ShipPostalCode] ON [Sales].[Orders] ([ShipPostalCode])\r\nGO\r\nCREATE NONCLUSTERED INDEX [ShippersOrders] ON [Sales].[Orders] ([ShipVia])\r\nGO\r\nALTER TABLE [Sales].[Orders] ADD CONSTRAINT [FK_Orders_Customers] FOREIGN KEY ([CustomerID]) REFERENCES [Sales].[Customers] ([CustomerID])\r\nGO\r\nALTER TABLE [Sales].[Orders] ADD CONSTRAINT [FK_Orders_Employees] FOREIGN KEY ([EmployeeID]) REFERENCES [Operation].[Employees] ([EmployeeID])\r\nGO\r\nALTER TABLE [Sales].[Orders] ADD CONSTRAINT [FK_Orders_Shippers] FOREIGN KEY ([ShipVia]) REFERENCES [Logistics].[Shippers] ([ShipperID])\r\nGO\r\nALTER TABLE [Sales].[Orders] NOCHECK CONSTRAINT [FK_Orders_Customers]\r\nGO\r\nALTER TABLE [Sales].[Orders] NOCHECK CONSTRAINT [FK_Orders_Employees]\r\nGO\r\nALTER TABLE [Sales].[Orders] NOCHECK CONSTRAINT [FK_Orders_Shippers]\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "Territories",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [Sales].[Territories]\r\n(\r\n[TerritoryID] [nvarchar] (20) NOT NULL,\r\n[TerritoryDescription] [nchar] (50) NOT NULL,\r\n[RegionID] [int] NOT NULL,\r\n[RegionName] [nchar] (10) NULL,\r\n[RegionCode] [nchar] (10) NULL,\r\n[RegionOwner] [nchar] (10) NULL,\r\n[Nationality] [nvarchar] (20) NULL,\r\n[NationalityCode] [nvarchar] (20) NULL\r\n)\r\nGO\r\nALTER TABLE [Sales].[Territories] ADD CONSTRAINT [PK_Territories] PRIMARY KEY NONCLUSTERED ([TerritoryID])\r\nGO\r\nALTER TABLE [Sales].[Territories] ADD CONSTRAINT [FK_Territories_Region] FOREIGN KEY ([RegionID]) REFERENCES [Logistics].[Region] ([RegionID])\r\nGO\r\nALTER TABLE [Sales].[Territories] NOCHECK CONSTRAINT [FK_Territories_Region]\r\nGO\r\n"
+    }, {
+      "objectType" : "Table",
+      "name" : "MissionDetail",
+      "schema" : "dbo",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE TABLE [dbo].[MissionDetail]\r\n(\r\n[Mission] [varchar] (255) NOT NULL,\r\n[LogicalDestinationID] [varchar] (32) NOT NULL,\r\n[WaveID] [varchar] (32) NOT NULL,\r\n[OrderID] [varchar] (32) NOT NULL,\r\n[ShipmentID] [varchar] (32) NOT NULL,\r\n[ConsolidationID] [varchar] (255) NOT NULL,\r\n[PickTaskID] [varchar] (50) NULL,\r\n[Priority] [int] NULL,\r\n[CreatedTime] [datetime2] (3) NOT NULL,\r\n[Status] [int] NULL,\r\n[StatusTime] [datetime2] (3) NULL,\r\n[Expected] [int] NULL,\r\n[Dispatched] [int] NULL,\r\n[Diverted] [int] NULL,\r\n[EOWFlag] [varchar] (3) NULL,\r\n[LastUpdateTime] [datetime2] (3) NOT NULL,\r\n[RecordID] [bigint] NOT NULL IDENTITY(1, 1),\r\n[Finished] AS (case  when [Status]=(100) OR [Status]=(75) then (1) else (0) end) PERSISTED NOT NULL\r\n)\r\nGO\r\n"
+    }, {
+      "objectType" : "Procedure",
+      "name" : "RecordFeedback",
+      "schema" : "Customers",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE PROCEDURE [Customers].[RecordFeedback] @CustomerID INT, @Rating INT, @Comments NVARCHAR(500)\r\nAS BEGIN\r\n    INSERT INTO Sales.CustomersFeedback(CustomerID, Rating, Comments)\r\n    VALUES(@CustomerID, @Rating, @Comments);\r\n    PRINT 'Customer feedback recorded successfully.';\r\nEND;\r\nGO\r\n"
+    }, {
+      "objectType" : "Procedure",
+      "name" : "AddMaintenanceLog",
+      "schema" : "Logistics",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE PROCEDURE [Logistics].[AddMaintenanceLog] @FlightID INT, @Description NVARCHAR(500)\r\nAS BEGIN\r\n    INSERT INTO Logistics.MaintenanceLog(FlightID, Description, MaintenanceStatus)\r\n    VALUES(@FlightID, @Description, 'Pending');\r\n    PRINT 'Maintenance log entry created.';\r\nEND;\r\nGO\r\n"
+    }, {
+      "objectType" : "Procedure",
+      "name" : "UpdateAvailableSeats",
+      "schema" : "Logistics",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE PROCEDURE [Logistics].[UpdateAvailableSeats] @FlightID INT, @SeatChange INT\r\nAS BEGIN\r\n    UPDATE Logistics.Flight\r\n    SET AvailableSeats=AvailableSeats+@SeatChange\r\n    WHERE FlightID=@FlightID;\r\nEND;\r\nGO\r\n"
+    }, {
+      "objectType" : "Procedure",
+      "name" : "Sales by Year",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE PROCEDURE [Sales].[Sales by Year] @Beginning_Date DATETIME, @Ending_Date DATETIME\r\nAS\r\nSELECT Orders.ShippedDate, Orders.OrderID, \"Order Subtotals\".Subtotal, DATENAME(yy, ShippedDate) AS Year\r\nFROM Orders -- orders new line - change id check \r\n     INNER JOIN \"Order Subtotals\" ON Orders.OrderID=\"Order Subtotals\".OrderID\r\nWHERE Orders.ShippedDate BETWEEN @Beginning_Date AND @Ending_Date;\r\nGO\r\n"
+    }, {
+      "objectType" : "Procedure",
+      "name" : "SalesByCategory",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE PROCEDURE [Sales].[SalesByCategory] @CategoryName NVARCHAR(15), @OrdYear NVARCHAR(4) ='1998'\r\nAS\r\nIF @OrdYear !='1996' AND @OrdYear !='1997' AND @OrdYear !='1998' BEGIN\r\n    SELECT @OrdYear='1998';\r\nEND;\r\nSELECT ProductName, TotalPurchase=ROUND(SUM(CONVERT(DECIMAL(14, 2), OD.Quantity *(1-OD.Discount)* OD.UnitPrice)), 0)\r\nFROM [Order Details] OD, [Sales].Orders O, [Operation].Products P, [Operation].Categories C\r\nWHERE OD.OrderID=O.OrderID AND OD.ProductID=P.ProductID AND P.CategoryID=C.CategoryID AND C.CategoryName=@CategoryName AND SUBSTRING(CONVERT(NVARCHAR(22), O.OrderDate, 111), 1, 4)=@OrdYear\r\nGROUP BY ProductName\r\nORDER BY ProductName;\r\nGO\r\n"
+    }, {
+      "objectType" : "View",
+      "name" : "FlightMaintenanceStatus",
+      "schema" : "Logistics",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE VIEW [Logistics].[FlightMaintenanceStatus]\r\nAS\r\nSELECT f.FlightID, f.Airline, f.DepartureCity, f.ArrivalCity, COUNT(m.LogID) AS MaintenanceCount, SUM(CASE WHEN m.MaintenanceStatus='Completed' THEN 1 ELSE 0 END) AS CompletedMaintenance\r\nFROM Logistics.Flight f\r\n     LEFT JOIN Logistics.MaintenanceLog m ON f.FlightID=m.FlightID\r\nGROUP BY f.FlightID, f.Airline, f.DepartureCity, f.ArrivalCity;\r\nGO\r\n"
+    }, {
+      "objectType" : "View",
+      "name" : "CustomerOrdersView",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE VIEW [Sales].[CustomerOrdersView]\r\nAS\r\nSELECT c.CustomerID, c.CompanyName, c.ContactName, c.Address, c.City, c.Region, c.Phone\r\nFROM Sales.Customers c\r\n     JOIN Sales.Orders o ON c.CustomerID=o.CustomerID;\r\nGO\r\n"
+    }, {
+      "objectType" : "View",
+      "name" : "CustomersFeedbackSummary",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE VIEW [Sales].[CustomersFeedbackSummary]\r\nAS\r\nSELECT c.CustomerID, c.CompanyName, c.ContactName, AVG(f.Rating) AS AverageRating, COUNT(f.FeedbackID) AS FeedbackCount\r\nFROM Sales.Customers c\r\n     LEFT JOIN Sales.CustomersFeedback f ON c.CustomerID=f.CustomerID\r\nGROUP BY c.CustomerID, c.CompanyName, c.ContactName;\r\nGO\r\n"
+    }, {
+      "objectType" : "View",
+      "name" : "Order Details Extended",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE VIEW [Sales].[Order Details Extended]\r\nAS\r\nSELECT od.OrderID, od.ProductID, p.ProductName, od.UnitPrice, od.Quantity, od.Discount, (CONVERT(MONEY, (od.UnitPrice * od.Quantity *(1-od.Discount)/ 100))* 100) AS ExtendedPrice\r\nFROM Operation.Products p\r\n     INNER JOIN \"Order Details\" od ON p.ProductID=od.ProductID;\r\n--ORDER BY od.OrderID\r\nGO\r\n"
+    }, {
+      "objectType" : "View",
+      "name" : "Order Subtotals",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE VIEW [Sales].[Order Subtotals]\r\nAS\r\nSELECT \"Order Details\".OrderID, SUM(CONVERT(MONEY, (\"Order Details\".UnitPrice * Quantity *(1-Discount)/ 100))* 100) AS Subtotal\r\nFROM \"Order Details\"\r\nGROUP BY \"Order Details\".OrderID;\r\nGO\r\n"
+    }, {
+      "objectType" : "View",
+      "name" : "Sales Totals by Amount",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE VIEW [Sales].[Sales Totals by Amount]\r\nAS\r\nSELECT \"Order Subtotals\".Subtotal AS SaleAmount, Orders.OrderID, Customers.CompanyName, Orders.ShippedDate\r\nFROM Customers\r\n     INNER JOIN(Orders\r\n                INNER JOIN \"Order Subtotals\" ON Orders.OrderID=\"Order Subtotals\".OrderID)ON Customers.CustomerID=Orders.CustomerID\r\nWHERE(\"Order Subtotals\".Subtotal>2500)AND(Orders.ShippedDate BETWEEN '19970101' AND '19971231');\r\nGO\r\n"
+    }, {
+      "objectType" : "View",
+      "name" : "Sales by Category",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE VIEW [Sales].[Sales by Category]\r\nAS\r\nSELECT Operation.Categories.CategoryID, Operation.Categories.CategoryName, Operation.Products.ProductName, SUM(\"Order Details Extended\".ExtendedPrice) AS ProductSales\r\nFROM Operation.Categories\r\n     INNER JOIN(Operation.Products\r\n                INNER JOIN(Orders\r\n                           INNER JOIN \"Order Details Extended\" ON Orders.OrderID=\"Order Details Extended\".OrderID)ON Operation.Products.ProductID=\"Order Details Extended\".ProductID)ON Operation.Categories.CategoryID=Operation.Products.CategoryID\r\nWHERE Orders.OrderDate BETWEEN '19970101' AND '19971231'\r\nGROUP BY Operation.Categories.CategoryID, Operation.Categories.CategoryName, Operation.Products.ProductName;\r\n--ORDER BY Operation.Products.ProductName\r\nGO\r\n"
+    }, {
+      "objectType" : "View",
+      "name" : "Summary of Sales by Quarter",
+      "schema" : "Sales",
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE VIEW [Sales].[Summary of Sales by Quarter]\r\nAS\r\nSELECT Orders.ShippedDate, Orders.OrderID, \"Order Subtotals\".Subtotal\r\nFROM Orders\r\n     INNER JOIN \"Order Subtotals\" ON Orders.OrderID=\"Order Subtotals\".OrderID\r\nWHERE Orders.ShippedDate IS NOT NULL;\r\n--ORDER BY Orders.ShippedDate\r\nGO\r\n"
+    }, {
+      "objectType" : "Schema",
+      "name" : "Customers",
+      "schema" : null,
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE SCHEMA [Customers]\r\nAUTHORIZATION [dbo]\r\nGO\r\n"
+    }, {
+      "objectType" : "Schema",
+      "name" : "Logistics",
+      "schema" : null,
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE SCHEMA [Logistics]\r\nAUTHORIZATION [dbo]\r\nGO\r\n"
+    }, {
+      "objectType" : "Schema",
+      "name" : "Operation",
+      "schema" : null,
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE SCHEMA [Operation]\r\nAUTHORIZATION [dbo]\r\nGO\r\n"
+    }, {
+      "objectType" : "Schema",
+      "name" : "Sales",
+      "schema" : null,
+      "definitionBefore" : null,
+      "definitionAfter" : "CREATE SCHEMA [Sales]\r\nAUTHORIZATION [dbo]\r\nGO\r\n"
+    } ],
+    "differences" : [ ],
+    "database" : "AutopilotDev"
+  } ]
+}
