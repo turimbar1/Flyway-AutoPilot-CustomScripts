@@ -81,8 +81,8 @@
         <Expression>TRUE</Expression>
       </Rule>
       <Schema version="1">
-        <Include>False</Include>
-        <Expression>(@NAME LIKE 'Meta%')</Expression>
+        <Include>True</Include>
+        <Expression>TRUE</Expression>
       </Schema>
       <SearchPropertyList version="1">
         <Include>True</Include>
