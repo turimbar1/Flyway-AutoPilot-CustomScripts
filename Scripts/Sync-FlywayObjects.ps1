@@ -62,9 +62,14 @@
     1. Runs 'flyway diff' to compare development database to schema-model
     2. Parses diff output to extract change IDs
     3. Filters for requested objects (if -Objects specified)
-    4. Runs 'flyway model' to update schema-model folder
-    5. Runs 'flyway diff' from development to migrations (with shadow build environment)
-    6. Runs 'flyway generate' to create versioned migration script
+    4. Runs 'flyway diff' from development to migrations (with shadow build environment)
+    5. Runs 'flyway generate' to create versioned migration script
+    6. Runs 'flyway migrate' to apply migrations to shadow
+    7. Runs 'flyway diff' from shadow to schema-model
+    8. Runs 'flyway model' to update schema-model folder from shadow
+    
+    This workflow ensures the schema-model reflects what the migrations actually produce,
+    rather than just copying from development directly.
     
     Requirements:
     - Flyway Enterprise Edition
@@ -281,56 +286,81 @@ if ($DryRun) {
     # Show what would be updated in schema model
     Write-Host "Schema Model Changes Preview:" -ForegroundColor Cyan
     Write-Host "-----------------------------" -ForegroundColor Cyan
-    $diffTextCommand = "flyway diffText `"-diff.source=development`" `"-diff.target=schemaModel`""
+    
+    # Use -diffText.changes to filter output to only the specified objects
+    if ($All) {
+        $diffTextCommand = "flyway diffText `"-diff.source=development`" `"-diff.target=schemaModel`""
+    } else {
+        $diffTextCommand = "flyway diffText `"-diff.source=development`" `"-diff.target=schemaModel`" `"-diffText.changes=$changeIds`""
+    }
     $diffTextOutput = Invoke-Expression $diffTextCommand 2>&1 | Out-String
     
-    # Filter to show only the selected changes
-    $lines = $diffTextOutput -split "`n"
-    $inSelectedObject = $false
-    $outputLines = @()
-    
-    foreach ($change in $matchedChanges) {
-        $objectPattern = "$($change.Schema)\.$($change.ObjectName)"
-        foreach ($line in $lines) {
-            if ($line -match "--- $($change.ObjectType)/$objectPattern" -or $line -match "\+\+\+ $($change.ObjectType)/$objectPattern") {
-                $inSelectedObject = $true
-            }
-            if ($inSelectedObject) {
-                $outputLines += $line
-                if ($line -match "^GO\s*$") {
-                    $inSelectedObject = $false
-                }
-            }
-        }
-    }
-    
-    if ($outputLines.Count -gt 0) {
-        $outputLines | ForEach-Object { Write-Host $_ }
+    if ($diffTextOutput -and $diffTextOutput.Trim()) {
+        Write-Host $diffTextOutput
     } else {
         Write-Host "No schema model changes detected for selected objects" -ForegroundColor Gray
     }
     Write-Host ""
     
     if (-not $SkipGenerate) {
-        # Run diff for generate preview
+        # Run diff from development to target for generate preview
         Write-Host "Migration Script Preview:" -ForegroundColor Cyan
         Write-Host "-------------------------" -ForegroundColor Cyan
-        $tempMigrationDir = Join-Path $env:TEMP "flyway-dryrun-$(Get-Date -Format 'yyyyMMddHHmmss')"
-        New-Item -ItemType Directory -Path $tempMigrationDir -Force | Out-Null
         
-        $genDiffCommand = "flyway diff `"-diff.source=development`" `"-diff.target=migrations`" `"-diff.buildEnvironment=$Target`""
+        # Run diff from development to target (shadow) to get correct change IDs for generate
+        Write-Host "  Running diff from development to $Target..." -ForegroundColor Gray
+        $genDiffCommand = "flyway diff `"-diff.source=development`" `"-diff.target=$Target`""
         $genDiffOutput = Invoke-Expression $genDiffCommand 2>&1 | Out-String
 
         if ($LASTEXITCODE -ne 0) {
-            Write-Warning "flyway diff (development -> migrations) failed with exit code $LASTEXITCODE"
+            Write-Warning "flyway diff (development -> $Target) failed with exit code $LASTEXITCODE"
             Write-Host $genDiffOutput
             Write-Host "Skipping generate preview due to diff error" -ForegroundColor Yellow
         } else {
+            # Parse the diff output to get change IDs for matched objects
+            $genDiffLines = $genDiffOutput -split "`n"
+            $genChanges = @()
+            $genTableStarted = $false
+
+            foreach ($line in $genDiffLines) {
+                if ($line -match '^\+[-+]+\+' -or $line -match '^\| Id\s+\|') {
+                    $genTableStarted = $true
+                    continue
+                }
+                if ($line -match '^\+[-+]+\+' -or $line -match '^\s*$') {
+                    continue
+                }
+                if ($genTableStarted -and $line -match '^\|\s*(\S+)\s*\|\s*(\w+)\s*\|\s*(\w+)\s*\|\s*(\w+)\s*\|\s*([^|]+)\s*\|') {
+                    $gChangeId = $matches[1].Trim()
+                    $gSchema = $matches[4].Trim()
+                    $gObjectName = $matches[5].Trim()
+                    if ($gChangeId -ne "Id" -and $gChangeId -notmatch "^No") {
+                        $genChanges += [PSCustomObject]@{
+                            ChangeId = $gChangeId
+                            FullName = "$gSchema.$gObjectName"
+                        }
+                    }
+                }
+            }
+
+            # Match the objects from the original list to get correct change IDs
+            $genChangeIds = @()
+            foreach ($obj in $matchedChanges) {
+                $matched = $genChanges | Where-Object { $_.FullName -eq $obj.FullName }
+                if ($matched) {
+                    $genChangeIds += $matched.ChangeId
+                }
+            }
+            $genChangeIdList = $genChangeIds -join ','
+
+            $tempMigrationDir = Join-Path $env:TEMP "flyway-dryrun-$(Get-Date -Format 'yyyyMMddHHmmss')"
+            New-Item -ItemType Directory -Path $tempMigrationDir -Force | Out-Null
+
             # Generate to temp location
-            if ($All) {
+            if ($All -or $genChangeIds.Count -eq 0) {
                 $generateCommand = "flyway generate `"-redgateCompare.sqlserver.options.behavior.includeDependencies=false`" `"-generate.location=$tempMigrationDir`" `"-generate.description=$Description`""
             } else {
-                $generateCommand = "flyway generate `"-generate.changes=$changeIds`" `"-redgateCompare.sqlserver.options.behavior.includeDependencies=false`" `"-generate.location=$tempMigrationDir`" `"-generate.description=$Description`""
+                $generateCommand = "flyway generate `"-generate.changes=$genChangeIdList`" `"-redgateCompare.sqlserver.options.behavior.includeDependencies=false`" `"-generate.location=$tempMigrationDir`" `"-generate.description=$Description`""
             }
             $genOutput = Invoke-Expression $generateCommand 2>&1 | Out-String
 
@@ -344,43 +374,22 @@ if ($DryRun) {
             } else {
                 Write-Host "No migration script generated" -ForegroundColor Gray
             }
+            
+            # Clean up temp directory
+            Remove-Item -Path $tempMigrationDir -Recurse -Force -ErrorAction SilentlyContinue
         }
-        
-        # Clean up temp directory
-        Remove-Item -Path $tempMigrationDir -Recurse -Force -ErrorAction SilentlyContinue
     }
     
     exit 0
 }
 
-# Step 4: Update schema model
-Write-Host "Step 4: Updating schema model..." -ForegroundColor Green
-
-if ($All) {
-    $modelCommand = "flyway model `"-redgateCompare.sqlserver.options.behavior.includeDependencies=false`""
-} else {
-    $modelCommand = "flyway model `"-model.changes=$changeIds`" `"-redgateCompare.sqlserver.options.behavior.includeDependencies=false`""
-}
-Write-Host "Executing: $modelCommand" -ForegroundColor Gray
-
-$modelOutput = Invoke-Expression $modelCommand 2>&1 | Out-String
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Flyway model failed. Output:`n$modelOutput"
-    exit 1
-}
-
-Write-Host $modelOutput
-Write-Host "✓ Schema model updated successfully" -ForegroundColor Green
-Write-Host ""
-
-# Step 5: Generate migration script (if not skipped)
+# Step 4: Generate migration script (if not skipped)
 if (-not $SkipGenerate) {
-    Write-Host "Step 5: Generating migration script..." -ForegroundColor Green
+    Write-Host "Step 4: Generating migration script..." -ForegroundColor Green
     
     # Run diff from development with build environment
     Write-Host "  Running diff from development with build environment..." -ForegroundColor Gray
-    $genDiffCommand = "flyway diff -diff.source=development `"-diff.target=migrations`" `"-diff.buildEnvironment=$Target`""
+    $genDiffCommand = "flyway diff `"-diff.source=development`" `"-diff.target=migrations`" `"-diff.buildEnvironment=$Target`""
     $genDiffOutput = Invoke-Expression $genDiffCommand 2>&1 | Out-String
 
     if ($LASTEXITCODE -ne 0) {
@@ -412,8 +421,76 @@ if (-not $SkipGenerate) {
         Write-Host "✓ Migration generated successfully" -ForegroundColor Green
     }
     Write-Host ""
+
+    # Step 5: Migrate to shadow
+    Write-Host "Step 5: Migrating to $Target..." -ForegroundColor Green
+    $migrateCommand = "flyway migrate `"-environment=$Target`""
+    Write-Host "Executing: $migrateCommand" -ForegroundColor Gray
+
+    $migrateOutput = Invoke-Expression $migrateCommand 2>&1 | Out-String
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Flyway migrate failed. Output:`n$migrateOutput"
+        exit 1
+    }
+
+    Write-Host $migrateOutput
+    Write-Host "✓ Migration applied to $Target successfully" -ForegroundColor Green
+    Write-Host ""
+
+    # Step 6: Update schema model from shadow
+    Write-Host "Step 6: Updating schema model from $Target..." -ForegroundColor Green
+    
+    # Run diff from shadow to schemaModel
+    Write-Host "  Running diff from $Target to schemaModel..." -ForegroundColor Gray
+    $modelDiffCommand = "flyway diff `"-diff.source=$Target`" `"-diff.target=schemaModel`""
+    $modelDiffOutput = Invoke-Expression $modelDiffCommand 2>&1 | Out-String
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "flyway diff ($Target -> schemaModel) failed. Output:`n$modelDiffOutput"
+        exit 1
+    }
+
+    if ($All) {
+        $modelCommand = "flyway model `"-redgateCompare.sqlserver.options.behavior.includeDependencies=false`""
+    } else {
+        $modelCommand = "flyway model `"-model.changes=$changeIds`" `"-redgateCompare.sqlserver.options.behavior.includeDependencies=false`""
+    }
+    Write-Host "Executing: $modelCommand" -ForegroundColor Gray
+
+    $modelOutput = Invoke-Expression $modelCommand 2>&1 | Out-String
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Flyway model failed. Output:`n$modelOutput"
+        exit 1
+    }
+
+    Write-Host $modelOutput
+    Write-Host "✓ Schema model updated successfully" -ForegroundColor Green
+    Write-Host ""
 } else {
-    Write-Host "Step 5: Skipping migration generation" -ForegroundColor Yellow
+    # If skipping generate, just update schema model from development
+    Write-Host "Step 4: Skipping migration generation" -ForegroundColor Yellow
+    Write-Host ""
+    
+    Write-Host "Step 5: Updating schema model from development..." -ForegroundColor Green
+
+    if ($All) {
+        $modelCommand = "flyway model `"-redgateCompare.sqlserver.options.behavior.includeDependencies=false`""
+    } else {
+        $modelCommand = "flyway model `"-model.changes=$changeIds`" `"-redgateCompare.sqlserver.options.behavior.includeDependencies=false`""
+    }
+    Write-Host "Executing: $modelCommand" -ForegroundColor Gray
+
+    $modelOutput = Invoke-Expression $modelCommand 2>&1 | Out-String
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Flyway model failed. Output:`n$modelOutput"
+        exit 1
+    }
+
+    Write-Host $modelOutput
+    Write-Host "✓ Schema model updated successfully" -ForegroundColor Green
     Write-Host ""
 }
 

@@ -16,7 +16,8 @@ CREATE TABLE [Operation].[Products]
 [Colour4] [nvarchar] (50) NULL,
 [Colour5] [nvarchar] (50) NULL,
 [Colour6] [nvarchar] (50) NULL,
-[Colour7] [nvarchar] (50) NULL
+[Colour7] [nvarchar] (50) NULL,
+[Colour8] [nvarchar] (50) NULL
 )
 GO
 ALTER TABLE [Operation].[Products] ADD CONSTRAINT [CK_Products_UnitPrice] CHECK (([UnitPrice]>=(0)))
