@@ -26,6 +26,12 @@
     When used, -model.changes and -generate.changes parameters are omitted from Flyway commands,
     allowing Flyway to sync all differences.
 
+.PARAMETER Mine
+    Switch to process only changes made by the current user. Uses SQL Server's default trace
+    to identify which objects were modified by your login. Useful in shared development 
+    environments where multiple developers are making changes to the same database.
+    Note: Only works if the default trace contains recent DDL events for your changes.
+
 .PARAMETER Description
     Custom description for the generated migration script. If not provided, a description is
     auto-generated using format: {branch}_{changeType}_{schema}_{object}_{user}
@@ -52,6 +58,14 @@
 .EXAMPLE
     .\Sync-FlywayObjects.ps1 -All -DryRun
     Preview all changes without making modifications.
+
+.EXAMPLE
+    .\Sync-FlywayObjects.ps1 -Mine
+    Syncs only the changes made by the current user (queries default trace).
+
+.EXAMPLE
+    .\Sync-FlywayObjects.ps1 -Mine -DryRun
+    Preview changes made by the current user without making modifications.
 
 .EXAMPLE
     .\Sync-FlywayObjects.ps1 -Objects "Operation.Products" -SkipGenerate
@@ -98,6 +112,8 @@ param(
     [string[]]$Objects,
     [Parameter(Mandatory=$false)]
     [switch]$All,
+    [Parameter(Mandatory=$false)]
+    [switch]$Mine,
     
     [Parameter(Mandatory=$false)]
     [string]$Description,
@@ -113,15 +129,108 @@ param(
 $Source = "development"
 $Target = "shadow"
 
+# Function to parse JDBC URL and get connection info
+function Get-ConnectionInfoFromToml {
+    param([string]$Environment)
+    
+    $tomlPath = Join-Path (Get-Location) "flyway.toml"
+    if (-not (Test-Path $tomlPath)) {
+        return $null
+    }
+    
+    $tomlContent = Get-Content $tomlPath -Raw
+    
+    # Find the environment section and extract URL
+    if ($tomlContent -match "\[environments\.$Environment\][\s\S]*?url\s*=\s*`"([^`"]+)`"") {
+        $jdbcUrl = $matches[1]
+        
+        # Parse JDBC URL: jdbc:sqlserver://SERVER\INSTANCE;databaseName=DB;...
+        $result = @{}
+        
+        if ($jdbcUrl -match "jdbc:sqlserver://([^;]+)") {
+            $serverPart = $matches[1]
+            # Handle escaped backslash for instance name
+            $result.Server = $serverPart -replace '\\\\', '\'
+        }
+        
+        if ($jdbcUrl -match "databaseName=([^;]+)") {
+            $result.Database = $matches[1]
+        }
+        
+        if ($result.Server -and $result.Database) {
+            return $result
+        }
+    }
+    return $null
+}
+
+# Function to query default trace for DDL changes
+function Get-DDLChangesFromTrace {
+    param(
+        [string]$Server,
+        [string]$Database
+    )
+    
+    $query = @"
+DECLARE @tracepath nvarchar(260)
+SELECT @tracepath = path FROM sys.traces WHERE is_default = 1
+
+IF @tracepath IS NOT NULL
+BEGIN
+    SELECT 
+        COALESCE(s.name, 'unknown') AS SchemaName,
+        t.ObjectName,
+        t.LoginName,
+        t.StartTime,
+        CASE t.EventClass 
+            WHEN 46 THEN 'CREATE'
+            WHEN 47 THEN 'DROP'
+            WHEN 164 THEN 'ALTER'
+            ELSE 'OTHER'
+        END AS EventType
+    FROM fn_trace_gettable(@tracepath, DEFAULT) t
+    LEFT JOIN sys.objects o ON o.object_id = t.ObjectID
+    LEFT JOIN sys.schemas s ON s.schema_id = o.schema_id
+    WHERE t.EventClass IN (46, 47, 164)
+        AND t.DatabaseName = DB_NAME()
+        AND t.ObjectName IS NOT NULL
+    ORDER BY t.StartTime DESC
+END
+"@
+    
+    try {
+        # Use SqlClient directly for maximum compatibility
+        $connectionString = "Server=$Server;Database=$Database;Integrated Security=True;TrustServerCertificate=True;Encrypt=True"
+        $connection = New-Object System.Data.SqlClient.SqlConnection($connectionString)
+        $connection.Open()
+        
+        $command = $connection.CreateCommand()
+        $command.CommandText = $query
+        $command.CommandTimeout = 30
+        
+        $adapter = New-Object System.Data.SqlClient.SqlDataAdapter($command)
+        $dataset = New-Object System.Data.DataSet
+        $adapter.Fill($dataset) | Out-Null
+        
+        $connection.Close()
+        
+        return $dataset.Tables[0]
+    }
+    catch {
+        Write-Host "  Note: Could not query default trace for change authors: $($_.Exception.Message)" -ForegroundColor Gray
+        return $null
+    }
+}
+
 Write-Host "=======================================" -ForegroundColor Cyan
 Write-Host "Flyway Object Sync Tool" -ForegroundColor Cyan
 Write-Host "=======================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Validate objects format (unless -All requested)
-if (-not $All) {
+# Validate parameter combinations
+if (-not $All -and -not $Mine) {
     if (-not $Objects -or $Objects.Count -eq 0) {
-        Write-Error "Specify -Objects or use -All to process all changes"
+        Write-Error "Specify -Objects, -All, or -Mine to process changes"
         exit 1
     }
 
@@ -133,9 +242,19 @@ if (-not $All) {
     }
 }
 
+# If -Mine is specified, we'll determine objects after querying the trace
+$currentUserLogin = $null
+if ($Mine) {
+    # Get current Windows user in domain\user format
+    $currentUserLogin = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    Write-Host "Filtering for changes by: $currentUserLogin" -ForegroundColor Cyan
+}
+
 Write-Host "Objects to sync:" -ForegroundColor Yellow
 if ($All) {
     Write-Host "  - ALL changes (processing every change found in diff)" -ForegroundColor Gray
+} elseif ($Mine) {
+    Write-Host "  - Changes made by current user (will be determined from default trace)" -ForegroundColor Gray
 } else {
     $Objects | ForEach-Object { Write-Host "  - $_" -ForegroundColor Gray }
 }
@@ -203,9 +322,53 @@ if ($changes.Count -eq 0) {
     exit 0
 }
 
+# Query default trace for change authors (required for -Mine, optional for -DryRun)
+$traceData = $null
+if ($Mine -or $DryRun) {
+    $connInfo = Get-ConnectionInfoFromToml -Environment $Source
+    if ($connInfo) {
+        Write-Host "  Querying default trace for change authors..." -ForegroundColor Gray
+        $traceData = Get-DDLChangesFromTrace -Server $connInfo.Server -Database $connInfo.Database
+        if (-not $traceData -or $traceData.Rows.Count -eq 0) {
+            Write-Host "  (No recent DDL events found in default trace)" -ForegroundColor Gray
+            if ($Mine) {
+                Write-Error "Cannot use -Mine: No DDL events found in default trace. The trace may have rolled over."
+                exit 1
+            }
+        }
+    } elseif ($Mine) {
+        Write-Error "Cannot use -Mine: Could not parse connection info from flyway.toml"
+        exit 1
+    }
+}
+
+# Add ModifiedBy property to changes if trace data available
+if ($traceData) {
+    foreach ($change in $changes) {
+        # Find the most recent trace entry for this object
+        $traceEntry = $traceData | Where-Object { 
+            $_.ObjectName -eq $change.ObjectName -or 
+            $_.ObjectName -eq "$($change.Schema).$($change.ObjectName)"
+        } | Select-Object -First 1
+        
+        if ($traceEntry) {
+            $change | Add-Member -NotePropertyName "ModifiedBy" -NotePropertyValue $traceEntry.LoginName -Force
+            $change | Add-Member -NotePropertyName "ModifiedAt" -NotePropertyValue $traceEntry.StartTime -Force
+        } else {
+            $change | Add-Member -NotePropertyName "ModifiedBy" -NotePropertyValue $null -Force
+            $change | Add-Member -NotePropertyName "ModifiedAt" -NotePropertyValue $null -Force
+        }
+    }
+}
+
 Write-Host "Found $($changes.Count) changes:" -ForegroundColor Yellow
 $changes | ForEach-Object {
-    Write-Host "  - $($_.FullName) [$($_.ObjectType)] - $($_.ChangeType)" -ForegroundColor Gray
+    $authorInfo = ""
+    if ($_.ModifiedBy) {
+        $timeStr = if ($_.ModifiedAt) { " at $($_.ModifiedAt.ToString('yyyy-MM-dd HH:mm'))" } else { "" }
+        $authorInfo = " (by $($_.ModifiedBy)$timeStr)"
+    }
+    Write-Host "  - $($_.FullName) [$($_.ObjectType)] - $($_.ChangeType)$authorInfo" -ForegroundColor Gray
 }
 Write-Host ""
 
@@ -220,6 +383,23 @@ if ($All) {
         exit 0
     }
     Write-Host "  ✓ Processing all $($matchedChanges.Count) change(s)" -ForegroundColor Green
+} elseif ($Mine) {
+    # Filter to only changes made by the current user
+    foreach ($change in $changes) {
+        if ($change.ModifiedBy -and $change.ModifiedBy -eq $currentUserLogin) {
+            $matchedChanges += $change
+            Write-Host "  ✓ Your change: $($change.FullName)" -ForegroundColor Green
+        } else {
+            $otherUser = if ($change.ModifiedBy) { $change.ModifiedBy } else { "unknown" }
+            Write-Host "  ✗ Skipping: $($change.FullName) (by $otherUser)" -ForegroundColor Gray
+        }
+    }
+
+    if ($matchedChanges.Count -eq 0) {
+        Write-Host "No changes found that were made by $currentUserLogin" -ForegroundColor Yellow
+        Write-Host "Note: The default trace may have rolled over, or your changes predate the trace window." -ForegroundColor Gray
+        exit 0
+    }
 } else {
     foreach ($obj in $Objects) {
         $matched = $changes | Where-Object { $_.FullName -eq $obj }
@@ -241,7 +421,11 @@ if ($All) {
 Write-Host ""
 Write-Host "Objects to process:" -ForegroundColor Yellow
 $matchedChanges | ForEach-Object {
-    Write-Host "  - $($_.FullName) [$($_.ChangeId)]" -ForegroundColor Gray
+    $authorInfo = ""
+    if ($_.ModifiedBy) {
+        $authorInfo = " (by $($_.ModifiedBy))"
+    }
+    Write-Host "  - $($_.FullName) [$($_.ChangeId)]$authorInfo" -ForegroundColor Gray
 }
 Write-Host ""
 
