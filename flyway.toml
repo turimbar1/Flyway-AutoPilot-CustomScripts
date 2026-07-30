@@ -34,28 +34,28 @@ url = "jdbc:sqlserver://US-LT-ANDREWP;instanceName=MSSQLSERVER01;databaseName=Te
 provisioner = "create-database"
 
 [flyway]
-locations = [ "filesystem:migrations" ]
+locations = [ "filesystem:migrations2" ]
 mixed = true
 outOfOrder = true
 validateMigrationNaming = true
 defaultSchema = "Customers"
 baselineOnMigrate = true
-baselineVersion = "001"
+baselineVersion = "13_20260526145258"
 errorOverrides = [ "S0001:0:I-" ]
 
 [flyway.sqlserver.clean]
 mode = "all"
 
-[flyway.sqlserver.clean.schemas]
-exclude = [ "ExampleSchema1", "ExampleSchema2" ]
+  [flyway.sqlserver.clean.schemas]
+  exclude = [ "ExampleSchema1", "ExampleSchema2" ]
 
 [flywayDesktop]
+enableMigrations = true
 developmentEnvironment = "development"
 shadowEnvironment = "shadow"
-schemaModel = "./schema-model"
 
-[flywayDesktop.generate]
-undoScripts = true
+  [flywayDesktop.generate]
+  undoScripts = true
 
 [redgateCompare.sqlserver]
 filterFile = "Filter.scpf"
@@ -149,3 +149,6 @@ dropPrimaryKeysIndexesAndUniqueConstraints = false
 reseedIdentityColumns = false
 skipIntegrityChecksForForeignKeys = false
 transportClrDataTypesAsBinary = false
+
+[flyway.check]
+sqlfluffCustomRulesPath = "\code-review-rules"
